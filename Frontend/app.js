@@ -33,17 +33,31 @@ uploadBtn.addEventListener("click", async () => {
   formData.append("file", file);
 
   try {
-    const res = await fetch("http://localhost:8000/upload", {
+    const res = await fetch("http://127.0.0.1:8000/upload", {
       method: "POST",
       body: formData
     });
 
     const data = await res.json();
 
+    console.log("RESPONSE DATA:", data);
+
+    if (!res.ok) {
+      throw new Error("Backend returned error");
+    }
+
+    const summaries = data.summary || data.summaries;
+
+    if (!summaries) {
+      statusText.innerText = "Invalid response from backend";
+      console.log("Bad data:", data);
+      return;
+    }
+
     statusText.innerText = "Done ✅";
 
     // SUMMARY
-    data.summary.forEach(item => {
+    summaries.forEach(item => {
       const div = document.createElement("div");
       div.className = "summary-box";
       div.innerHTML = `<pre>${item}</pre>`;
@@ -58,8 +72,8 @@ uploadBtn.addEventListener("click", async () => {
       impactDiv.appendChild(div);
     });
 
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("ERROR:", error);
     statusText.innerText = "Backend error ❌";
   }
 });
