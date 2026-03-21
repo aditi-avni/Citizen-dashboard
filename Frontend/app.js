@@ -1,79 +1,84 @@
-const fileInput = document.getElementById("fileInput");
-const uploadBtn = document.getElementById("uploadBtn");
-const statusText = document.getElementById("status");
+document.addEventListener("DOMContentLoaded", () => {
 
-const summaryDiv = document.getElementById("summary");
-const impactDiv = document.getElementById("impact");
+  const fileInput = document.getElementById("fileInput");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const statusText = document.getElementById("status");
 
-// TAB SWITCH
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  const summaryDiv = document.getElementById("summary");
+  const impactDiv = document.getElementById("impact");
 
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  });
-});
+  // TAB SWITCH
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
 
-// UPLOAD
-uploadBtn.addEventListener("click", async () => {
-  const file = fileInput.files[0];
-
-  if (!file) {
-    alert("Upload a file first 😭");
-    return;
-  }
-
-  statusText.innerText = "Analyzing...";
-  summaryDiv.innerHTML = "";
-  impactDiv.innerHTML = "";
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const res = await fetch("http://127.0.0.1:8000/upload", {
-      method: "POST",
-      body: formData
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
     });
+  });
 
-    const data = await res.json();
+  // UPLOAD & ANALYZE
+  uploadBtn.addEventListener("click", async () => {
+    const file = fileInput.files[0];
 
-    console.log("RESPONSE DATA:", data);
-
-    if (!res.ok) {
-      throw new Error("Backend returned error");
-    }
-
-    const summaries = data.summary || data.summaries;
-
-    if (!summaries) {
-      statusText.innerText = "Invalid response from backend";
-      console.log("Bad data:", data);
+    if (!file) {
+      alert("Please upload a file first");
       return;
     }
 
-    statusText.innerText = "Done ✅";
+    statusText.innerText = "Analyzing...";
+    summaryDiv.innerHTML = "";
+    impactDiv.innerHTML = "";
 
-    // SUMMARY
-    summaries.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "summary-box";
-      div.innerHTML = `<pre>${item}</pre>`;
-      summaryDiv.appendChild(div);
-    });
+    const formData = new FormData();
+    formData.append("file", file);
 
-    // IMPACT (placeholder)
-    ["Students", "Businesses", "General Public"].forEach(type => {
-      const div = document.createElement("div");
-      div.className = "impact-card";
-      div.innerHTML = `<strong>${type}</strong><br/>Impact analysis coming soon...`;
-      impactDiv.appendChild(div);
-    });
+    try {
+      const res = await fetch("http://127.0.0.1:8000/upload", {
+        method: "POST",
+        body: formData
+      });
 
-  } catch (error) {
-    console.error("ERROR:", error);
-    statusText.innerText = "Backend error ❌";
-  }
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+
+      const data = await res.json();
+      console.log("DATA:", data);
+
+      statusText.innerText = "Done ✅";
+
+      // SUMMARY SECTION
+      if (data.summary && Array.isArray(data.summary)) {
+        data.summary.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "summary-box";
+          div.innerHTML = `<pre>${item}</pre>`;
+          summaryDiv.appendChild(div);
+        });
+      } else {
+        summaryDiv.innerHTML = "No summary returned.";
+      }
+
+      // IMPACT SECTION
+      const impacts = [
+        { title: "Students", text: "Impact analysis coming soon..." },
+        { title: "Businesses", text: "Impact analysis coming soon..." },
+        { title: "General Public", text: "Impact analysis coming soon..." }
+      ];
+
+      impacts.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "impact-card";
+        div.innerHTML = `<strong>${item.title}</strong><br/>${item.text}`;
+        impactDiv.appendChild(div);
+      });
+
+    } catch (error) {
+      console.error("ERROR:", error);
+      statusText.innerText = "Backend error ❌";
+    }
+  });
+
 });
